@@ -1,9 +1,13 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import Authlayout from '../../components/layouts/Authlayout'
 import { validateEmail } from '../../utils/helper';
 import ProfilePhotoSelector from '../../components/Inputs/ProfilePhotoSelector';
 import Input from '../../components/Inputs/Input';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axiosInstance from '../../utils/axiosInstance';
+import { API_PATHS } from '../../utils/apiPaths';
+import { UserContext } from '../../context/userContext';
+import uploadImage from '../../utils/uploadImage';
 
 function SignUp() {
   const [profilePic, setProfilePic] = useState(null);
@@ -13,8 +17,13 @@ function SignUp() {
   const [adminInviteToken, setAdminInviteToken] = useState("");
   const [error, setError] = useState(null);
 
+  const navigate=useNavigate();
+  const {updatedUser}=useContext(UserContext);
+
   const handleSignUp = async (e) => {
     e.preventDefault();
+
+    let profileImageUrl="";
 
     if (!fullName) {
       setError("Please Enter Full Name");
@@ -32,6 +41,40 @@ function SignUp() {
     }
 
     setError("");
+
+    try{
+      if(profilePic){
+        const imageUploadRes=await uploadImage(profilePic);
+        profileImageUrl=imageUploadRes.imageUrl || "";
+      }
+      const response=await axiosInstance.post(API_PATHS.AUTH.REGISTER, {
+        name: fullName,
+        profileImageUrl,
+        email, password, adminInviteToken
+      });
+
+      const {token, role}=response.data;
+
+      if(token){
+        localStorage.setItem("token", token);
+        updatedUser(response.data);
+
+        if(role==='admin'){
+          navigate("/admin/dashboard");
+        }
+        else{
+          navigate("/user/dashboard");
+        }
+      }
+    }
+    catch(error){
+      if(error.response && error.response.data.message){
+        setError(error.response.data.message);
+      }
+      else{
+        setError("Something went Wrong. Please Try Again");
+      }
+    }
   }
 
   return (
