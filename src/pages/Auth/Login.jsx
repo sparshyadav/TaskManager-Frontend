@@ -13,7 +13,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
 
-  const {updateUser} =useContext(UserContext); 
+  const {updatedUser} =useContext(UserContext); 
 
   const navigate = useNavigate();
 
@@ -41,7 +41,7 @@ function Login() {
 
       if(token){
         localStorage.setItem("token", token);
-        updateUser(response.data);
+        updatedUser(response.data);
 
         if(role==='admin'){
           navigate("/admin/dashboard");
